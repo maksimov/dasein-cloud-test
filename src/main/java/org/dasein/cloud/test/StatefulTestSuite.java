@@ -26,6 +26,7 @@ import org.dasein.cloud.test.compute.StatefulImageTests;
 import org.dasein.cloud.test.compute.StatefulSnapshotTests;
 import org.dasein.cloud.test.compute.StatefulVMTests;
 import org.dasein.cloud.test.compute.StatefulVolumeTests;
+import org.dasein.cloud.test.container.StatefulContainerTests;
 import org.dasein.cloud.test.identity.StatefulIAMTests;
 import org.dasein.cloud.test.identity.StatefulKeypairTests;
 import org.dasein.cloud.test.network.StatefulDNSTests;
@@ -71,7 +72,8 @@ import org.junit.runners.Suite;
         StatefulPushNotificationTests.class,
         StatefulTopologyTests.class,
         StatefulCITests.class,
-        StatefulHttpLoadBalancerTests.class
+        StatefulHttpLoadBalancerTests.class,
+        StatefulContainerTests.class
 })
 public class StatefulTestSuite {
 }

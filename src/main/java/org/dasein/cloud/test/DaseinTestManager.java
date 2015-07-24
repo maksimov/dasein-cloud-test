@@ -28,6 +28,7 @@ import org.dasein.cloud.platform.DatabaseEngine;
 import org.dasein.cloud.storage.Blob;
 import org.dasein.cloud.test.ci.CIResources;
 import org.dasein.cloud.test.compute.ComputeResources;
+import org.dasein.cloud.test.container.ContainerResources;
 import org.dasein.cloud.test.identity.IdentityResources;
 import org.dasein.cloud.test.network.NetworkResources;
 import org.dasein.cloud.test.platform.PlatformResources;
@@ -63,6 +64,7 @@ public class DaseinTestManager {
     static private NetworkResources  networkResources;
     static private PlatformResources platformResources;
     static private StorageResources  storageResources;
+    static private ContainerResources containerResources;
 
     static private TreeSet<String>   inclusions;
 
@@ -326,6 +328,8 @@ public class DaseinTestManager {
         return storageResources;
     }
 
+    static public @Nullable ContainerResources getContainerResources() { return containerResources; }
+
     static public void init() {
         Logger logger = Logger.getLogger(DaseinTestManager.class);
 
@@ -339,6 +343,7 @@ public class DaseinTestManager {
             networkResources = new NetworkResources(cloudProvider);
             identityResources = new IdentityResources(cloudProvider);
             ciResources = new CIResources(cloudProvider);
+            containerResources = new ContainerResources(cloudProvider);
             computeResources = new ComputeResources(cloudProvider);
 
             computeResources.init();
@@ -426,6 +431,11 @@ public class DaseinTestManager {
                 out(logger, null, "Storage Resources", String.valueOf(count));
                 cleaned += count;
             }
+            if( containerResources != null ) {
+                int count = containerResources.close();
+                out(logger, null, "Container Resources", String.valueOf(count));
+                cleaned += count;
+            }
         }
         finally {
             logger.info("END Test Clean Up ------------------------------------------------------------------------------");
@@ -465,6 +475,10 @@ public class DaseinTestManager {
         if( storageResources != null ) {
             provisioned += storageResources.report();
         }
+        if( containerResources != null ) {
+            provisioned += containerResources.report();
+        }
+
         logger.info("");
         logger.info("--------------- Results ---------------");
         out(logger, null, "Tests", String.valueOf(testCount));
@@ -796,6 +810,10 @@ public class DaseinTestManager {
 
     public @Nullable String getTestZoneId(@Nonnull String label, boolean provisionIfNull) {
         return (networkResources == null ? null : networkResources.getTestZoneId(label, provisionIfNull));
+    }
+
+    public @Nullable String getTestClusterId(@Nonnull String label, boolean provisionIfNull) {
+        return (containerResources == null ? null : containerResources.getTestClusterId(label, provisionIfNull));
     }
 
     public @Nonnull CloudProvider getProvider() {

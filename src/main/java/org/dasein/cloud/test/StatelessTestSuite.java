@@ -29,6 +29,7 @@ import org.dasein.cloud.test.compute.StatelessVMTests;
 import org.dasein.cloud.test.compute.StatelessVolumeTests;
 import org.dasein.cloud.test.ci.StatelessHttpLoadBalancerTests;
 import org.dasein.cloud.test.ci.StatelessTopologyTests;
+import org.dasein.cloud.test.container.StatelessContainerTests;
 import org.dasein.cloud.test.identity.StatelessIAMTests;
 import org.dasein.cloud.test.identity.StatelessKeypairTests;
 import org.dasein.cloud.test.network.StatelessDNSTests;
@@ -53,6 +54,7 @@ import org.junit.runners.Suite;
  *
  * @author George Reese
  * @version 2013.07 added MQ support (issue #6)
+ * @version 2015.09 added Container support
  */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
@@ -80,7 +82,8 @@ import org.junit.runners.Suite;
         StatelessNotificationsTests.class,
         StatelessVMMonitoringTests.class,
         StatelessTopologyTests.class,
-        StatelessHttpLoadBalancerTests.class
+        StatelessHttpLoadBalancerTests.class,
+        StatelessContainerTests.class
 })
 public class StatelessTestSuite {
 }
