@@ -26,7 +26,6 @@ import org.dasein.cloud.network.FirewallSupport;
 import org.dasein.cloud.test.DaseinTestManager;
 import org.dasein.util.CalendarWrapper;
 import org.junit.*;
-import org.junit.experimental.theories.suppliers.TestedOn;
 import org.junit.rules.TestName;
 
 import javax.annotation.Nonnull;
