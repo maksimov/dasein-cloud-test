@@ -1067,7 +1067,7 @@ public class StatefulVMTests {
             }
             if( (product.getCpuCount() > currentProduct.getCpuCount()
                     || product.getRamSize().intValue() > currentProduct.getRamSize().intValue())
-                    && product.getRootVolumeSize().longValue() > currentProduct.getRootVolumeSize().longValue() ) {
+                    && product.getRootVolumeSize().longValue() >= currentProduct.getRootVolumeSize().longValue() ) {
                 newProduct = product;
                 break;
             }
