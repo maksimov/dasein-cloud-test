@@ -326,12 +326,16 @@ public class StatefulVMTests {
 
         VMLaunchOptions options = VMLaunchOptions.getInstance(productId, imageId, "dsnVmIp" + ( System.currentTimeMillis() % 10000 ), "Dasein Vm With IP Launch " + System.currentTimeMillis(), "Test launch for a VM with an IP");
 
-        String testVmIp = "192.168.101.100";
+        String testVmIp = "192.168.200.100";
         options.withPrivateIp(testVmIp);
-        options.withGatewayList("192.168.101.1");
-        options.withDnsServerList("192.168.101.1");
+        options.withGatewayList("192.168.200.1");
+        options.withDnsServerList("8.8.8.8", "8.8.4.4");
         options.withMetaData("vSphereNetMaskNothingToSeeHere", "255.255.255.0");
         options.withDnsDomain("dasein.org");
+        options.withDnsSuffixList("dasein.org");
+        options.withWinOrgName("dasein");
+        options.withWinOwnerName("dasein");
+        options.withWinWorkgroupName("workgroup");
 
         String vlanId = tm.getTestVLANId(DaseinTestManager.STATELESS, true, options.getDataCenterId());
         if( vlanId != null ) {
@@ -500,7 +504,7 @@ public class StatefulVMTests {
 
         VirtualMachineSupport support = services.getVirtualMachineSupport();
 
-        if( support != null ) {
+        if( support == null ) {
             tm.ok("No virtual machine support in this cloud");
             return;
         }
@@ -670,7 +674,7 @@ public class StatefulVMTests {
                     for (StoragePool pool : pools) {
                         String dataCenterId = pool.getDataCenterId();
                         if (dataCenterId == null || dataCenterId.equals(testDataCenterId)) {
-                            testStoragePoolId = pool.getStoragePoolName();
+                            testStoragePoolId = pool.getStoragePoolId();
                             break;
                         }
                     }
@@ -836,7 +840,7 @@ public class StatefulVMTests {
                                         boolean foundFolder = false;
                                         Map<String, String> tags = vm.getTags();
                                         for( Map.Entry<String, String> entry : tags.entrySet() ) {
-                                            if (entry.getKey().equals("vmFolder")) {
+                                            if (entry.getKey().equals("vmFolderId")) {
                                                 tm.out("In folder", entry.getValue());
                                                 if (entry.getValue().equals(testVMFolderId)) {
                                                     foundFolder = true;
