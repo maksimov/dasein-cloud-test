@@ -316,6 +316,34 @@ public class StatelessVMTests {
         }
     }
 
+    //Bringing this back for the listAll - hopefully won't stay forever
+    @Test
+    public void listAllVMProducts() throws CloudException, InternalException{
+        assumeTrue(!tm.isTestSkipped());
+        ComputeServices services = tm.getProvider().getComputeServices();
+
+        if( services == null ) {
+            tm.ok("No compute services in this cloud");
+            return;
+        }
+        VirtualMachineSupport support = services.getVirtualMachineSupport();
+
+        if( support == null ) {
+            tm.ok("No virtual machine support in this cloud");
+            return;
+        }
+
+        Iterable<VirtualMachineProduct> products = support.listAllProducts();
+        int totalProducts = 0;
+
+        assertNotNull("listAllProducts() must return at least an empty collections and may not be null", products);
+        for( VirtualMachineProduct product : products ) {
+            totalProducts++;
+        }
+        tm.out("Total Product Count", totalProducts);
+        assertThat("Number of products should be greater than zero", totalProducts, greaterThan(0));
+    }
+
     // TODO(stas): this is a bare-bones test that doesn't test anything specific to
     // listProducts(String imageId) so it will need further work.
     @Test
