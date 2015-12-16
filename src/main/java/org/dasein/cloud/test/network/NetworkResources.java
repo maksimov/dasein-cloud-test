@@ -1610,7 +1610,7 @@ public class NetworkResources {
             }
         }
         if( version == null ) {
-            throw new CloudException("No IP version is requestable");
+            throw new InternalException("No IP version is requestable");
         }
         Map<String, String> map;
 
@@ -1720,12 +1720,12 @@ public class NetworkResources {
     	NetworkServices services = provider.getNetworkServices();
 
         if( services == null ) {
-            throw new CloudException("This cloud does not support load balancers");
+            throw new OperationNotSupportedException("This cloud does not support load balancers");
         }
         LoadBalancerSupport support = services.getLoadBalancerSupport();
 
         if( support == null ) {
-            throw new CloudException("This cloud does not support load balancers");
+            throw new OperationNotSupportedException("This cloud does not support load balancers");
         }
 
         String name = ( namePrefix == null ? "dsnlb" + random.nextInt(10000) : namePrefix + random.nextInt(10000) );
@@ -1846,7 +1846,7 @@ public class NetworkResources {
                         }
                         VLAN vlan = vlanSupport.getVlan(vlanId);
                         if( vlan == null ) {
-                            throw new CloudException("No such VLAN: " + vlanId);
+                            throw new ResourceNotFoundException("No such VLAN: " + vlanId);
                         }
                         String subnetId = getTestSubnetId(DaseinTestManager.STATEFUL, true, vlanId, vlan.getProviderDataCenterId());
                         try {
@@ -1855,7 +1855,7 @@ public class NetworkResources {
                         }
                         Subnet subnet = services.getVlanSupport().getSubnet(subnetId);
                         if( subnet == null ) {
-                            throw new CloudException("No such Subnet: " + subnetId);
+                            throw new ResourceNotFoundException("No such Subnet: " + subnetId);
                         }
                         testSubnetId = subnetId;
                         String productId = c.getTestVMProductId();
@@ -1940,12 +1940,12 @@ public class NetworkResources {
         NetworkServices services = provider.getNetworkServices();
 
         if( services == null ) {
-            throw new CloudException("This cloud does not support load balancers");
+            throw new OperationNotSupportedException("This cloud does not support load balancers");
         }
         LoadBalancerSupport support = services.getLoadBalancerSupport();
 
         if( support == null ) {
-            throw new CloudException("This cloud does not support load balancers");
+            throw new OperationNotSupportedException("This cloud does not support load balancers");
         }
 
         String name = ( namePrefix == null ? "dsnssl" + random.nextInt(10000) : namePrefix + random.nextInt(10000) );
@@ -2018,18 +2018,18 @@ public class NetworkResources {
         NetworkServices services = provider.getNetworkServices();
 
         if( services == null ) {
-            throw new CloudException("This cloud does not support network firewalls");
+            throw new OperationNotSupportedException("This cloud does not support network firewalls");
         }
         NetworkFirewallSupport support = services.getNetworkFirewallSupport();
 
         if( support == null ) {
-            throw new CloudException("This cloud does not support network firewalls");
+            throw new OperationNotSupportedException("This cloud does not support network firewalls");
         }
 
         if( vlanId == null ) {
             vlanId = getTestVLANId(DaseinTestManager.STATEFUL, true, null);
             if( vlanId == null ) {
-                throw new CloudException("No VLAN ID could be found");
+                throw new ResourceNotFoundException("No VLAN ID could be found");
             }
         }
 
@@ -2055,7 +2055,7 @@ public class NetworkResources {
             VLAN vlan = support.getVlan(vlanId);
 
             if( vlan == null ) {
-                throw new CloudException("No such VLAN: " + vlanId);
+                throw new ResourceNotFoundException("No such VLAN: " + vlanId);
             }
             preferredDataCenterId = vlan.getProviderDataCenterId();
             if( preferredDataCenterId == null ) {
@@ -2106,7 +2106,7 @@ public class NetworkResources {
         if( support.getCapabilities().isSubnetDataCenterConstrained() ) {
             VLAN vlan = support.getVlan(vlanId);
             if( vlan == null ) {
-                throw new CloudException("No such VLAN: " + vlanId);
+                throw new ResourceNotFoundException("No such VLAN: " + vlanId);
             }
         }
         String id = support.createInternetGateway(vlanId);
@@ -2127,7 +2127,7 @@ public class NetworkResources {
         //}
         id = support.createVlan("192.168.1.0/24", namePrefix + ( System.currentTimeMillis() % 10000 ), "Test VLAN for the Dasein Cloud Integration tests", "example.com", new String[]{"192.168.1.1"}, new String[]{"192.168.1.1"}).getProviderVlanId();
         if( id == null ) {
-            throw new CloudException("No VLAN was created");
+            throw new GeneralCloudException("No VLAN was created", CloudErrorType.GENERAL);
         }
         synchronized ( testVLANs ) {
             while( testVLANs.containsKey(label) ) {
@@ -2141,7 +2141,7 @@ public class NetworkResources {
     public @Nonnull String provisionRoutingTable(@Nonnull VLANSupport support, @Nonnull String vlanId, @Nonnull String label, @Nonnull String namePrefix) throws CloudException, InternalException {
         String id = support.createRoutingTable(vlanId, namePrefix + ( System.currentTimeMillis() % 10000 ), "Test Routing Table for the Dasein Cloud Integration tests");
         if( id == null ) {
-            throw new CloudException("No Routing Table was created");
+            throw new GeneralCloudException("No Routing Table was created", CloudErrorType.GENERAL);
         }
         synchronized ( testRouteTables ) {
             while( testRouteTables.containsKey(label) ) {
@@ -2168,11 +2168,11 @@ public class NetworkResources {
     public @Nonnull String provisionVpn(String label, @Nonnull String namePrefix, String testDataCenterId) throws CloudException, InternalException {
         NetworkServices networkServices = provider.getNetworkServices();
         if( networkServices == null ) {
-            throw new CloudException("This cloud doesn't support network services");
+            throw new OperationNotSupportedException("This cloud doesn't support network services");
         }
         VpnSupport vpnSupport = networkServices.getVpnSupport();
         if( vpnSupport == null ) {
-            throw new CloudException("This cloud doesn't have VPN support");
+            throw new OperationNotSupportedException("This cloud doesn't have VPN support");
         }
         String name = namePrefix + ( System.currentTimeMillis() % 10000 );
         VpnProtocol protocol = vpnSupport.getCapabilities().listSupportedVpnProtocols().iterator().next();

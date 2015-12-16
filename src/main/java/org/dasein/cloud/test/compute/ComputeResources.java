@@ -25,10 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.CloudProvider;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.Requirement;
+import org.dasein.cloud.*;
 import org.dasein.cloud.compute.*;
 import org.dasein.cloud.dc.DataCenter;
 import org.dasein.cloud.network.NetworkServices;
@@ -500,7 +497,7 @@ public class ComputeResources {
                     if( (vm == null || VmState.TERMINATED.equals(vm.getCurrentState()) || vm.getProviderVlanId() == null || !vm.getProviderVlanId().equalsIgnoreCase(vlanId)) && provisionIfNull ) {
                         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
                         if( testImageId == null ) {
-                            throw new CloudException("No test image exists for provisioning a virtual machine");
+                            throw new ResourceNotFoundException("No test image exists for provisioning a virtual machine");
                         }
                         long now = System.currentTimeMillis();
                         String name = "dasein-test-" + label + " " + now;
@@ -885,18 +882,18 @@ public class ComputeResources {
             vmSupport = services.getVirtualMachineSupport();
         }
         if( vmSupport == null ) {
-            throw new CloudException("Unable to provision a machine image because Dasein Cloud is showing no VM support");
+            throw new OperationNotSupportedException("Unable to provision a machine image because Dasein Cloud is showing no VM support");
         }
         if( vmId == null ) {
             vmId = getTestVmId(DaseinTestManager.STATEFUL, VmState.RUNNING, true, null);
             if( vmId == null ) {
-                throw new CloudException("Could not identify a VM for imaging");
+                throw new ResourceNotFoundException("Could not identify a VM for imaging");
             }
         }
         VirtualMachine vm = vmSupport.getVirtualMachine(vmId);
 
         if( vm == null ) {
-            throw new CloudException("Could not identify a VM for imaging");
+            throw new ResourceNotFoundException("Could not identify a VM for imaging");
         }
         String imageId = vm.getProviderMachineImageId();
         MachineImage image = support.getImage(imageId);
@@ -930,7 +927,7 @@ public class ComputeResources {
                 return id;
             }
         }
-        throw new CloudException("No mechanism exists for provisioning images from a virtual machine");
+        throw new OperationNotSupportedException("No mechanism exists for provisioning images from a virtual machine");
     }
 
     public @Nonnull String provisionSnapshot( @SuppressWarnings("UnusedParameters") @Nonnull SnapshotSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nullable String volumeId ) throws CloudException, InternalException {
@@ -939,7 +936,7 @@ public class ComputeResources {
         if( volumeId == null ) {
             volumeId = getTestVolumeId(DaseinTestManager.STATEFUL + ( System.currentTimeMillis() % 1000 ), true, null, null);
             if( volumeId == null ) {
-                throw new CloudException("No volume from which to create a snapshot");
+                throw new ResourceNotFoundException("No volume from which to create a snapshot");
             }
         }
         @SuppressWarnings("ConstantConditions") VolumeSupport vs = provider.getComputeServices().getVolumeSupport();
@@ -987,7 +984,7 @@ public class ComputeResources {
         String id = options.build(provider);
 
         if( id == null ) {
-            throw new CloudException("Unable to create a snapshot");
+            throw new GeneralCloudException("Unable to create a snapshot", CloudErrorType.GENERAL);
         }
         synchronized ( testSnapshots ) {
             while( testSnapshots.containsKey(label) ) {
@@ -1229,7 +1226,7 @@ public class ComputeResources {
     public @Nonnull String provisionVM( @Nonnull VirtualMachineSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nonnull String hostPrefix, @Nullable String preferredDataCenter ) throws CloudException, InternalException {
         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
         if( testImageId == null ) {
-            throw new CloudException("No test image exists for provisioning a virtual machine");
+            throw new ResourceNotFoundException("No test image exists for provisioning a virtual machine");
         }
         long now = System.currentTimeMillis();
         String name = namePrefix + "-" + now;
@@ -1244,7 +1241,7 @@ public class ComputeResources {
     public @Nonnull Iterable<String> provisionManyVMs( @Nonnull VirtualMachineSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nonnull String hostPrefix, @Nullable String preferredDataCenter, int count ) throws CloudException, InternalException {
         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
         if( testImageId == null ) {
-            throw new CloudException("No test image exists for provisioning a virtual machine");
+            throw new ResourceNotFoundException("No test image exists for provisioning a virtual machine");
         }
         long now = System.currentTimeMillis();
         String name = namePrefix + "-" + now;
