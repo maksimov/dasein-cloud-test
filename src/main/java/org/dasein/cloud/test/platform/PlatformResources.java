@@ -20,10 +20,7 @@
 package org.dasein.cloud.test.platform;
 
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudErrorType;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.CloudProvider;
-import org.dasein.cloud.InternalException;
+import org.dasein.cloud.*;
 import org.dasein.cloud.platform.*;
 import org.dasein.cloud.storage.Blob;
 import org.dasein.cloud.test.DaseinTestManager;
@@ -574,7 +571,7 @@ public class PlatformResources {
         DatabaseProduct product = getNextCheapestProduct(support.listDatabaseProducts(engine), afterThis );
 
         if( product == null ) {
-            throw new CloudException("No database product could be identified");
+            throw new ResourceNotFoundException("No database product could be identified");
         }
 
         return product;
@@ -629,7 +626,7 @@ public class PlatformResources {
         } while( id == null );
 
         if( id == null ) {
-            throw new CloudException("No database was generated");
+            throw new GeneralCloudException("No database was generated", CloudErrorType.GENERAL);
         }
 
         synchronized( testRDBMS ) {

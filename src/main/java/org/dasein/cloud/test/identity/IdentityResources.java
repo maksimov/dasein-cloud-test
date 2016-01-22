@@ -21,10 +21,7 @@ package org.dasein.cloud.test.identity;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.CloudProvider;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.Requirement;
+import org.dasein.cloud.*;
 import org.dasein.cloud.identity.CloudGroup;
 import org.dasein.cloud.identity.CloudUser;
 import org.dasein.cloud.identity.IdentityAndAccessSupport;
@@ -404,7 +401,7 @@ public class IdentityResources {
         String id = support.createGroup(namePrefix + " " + System.currentTimeMillis(), "/dsntest", false).getProviderGroupId();
 
         if( id == null ) {
-            throw new CloudException("No group was created");
+            throw new GeneralCloudException("No group was created", CloudErrorType.GENERAL);
         }
         synchronized( testGroups ) {
             while( testGroups.containsKey(label) ) {
@@ -428,7 +425,7 @@ public class IdentityResources {
             id = support.createKeypair(namePrefix + (System.currentTimeMillis()%10000)).getProviderKeypairId();
         }
         if( id == null ) {
-            throw new CloudException("No keypair was generated");
+            throw new GeneralCloudException("No keypair was generated", CloudErrorType.GENERAL);
         }
         synchronized( testKeys ) {
             while( testKeys.containsKey(label) ) {
@@ -443,7 +440,7 @@ public class IdentityResources {
         String id = support.createUser(namePrefix + (System.currentTimeMillis()%10000), "/dsntest", preferredGroups == null ? new String[0] : preferredGroups).getProviderUserId();
 
         if( id == null ) {
-            throw new CloudException("No user was created");
+            throw new GeneralCloudException("No user was created", CloudErrorType.GENERAL);
         }
         synchronized( testUsers ) {
             while( testUsers.containsKey(label) ) {

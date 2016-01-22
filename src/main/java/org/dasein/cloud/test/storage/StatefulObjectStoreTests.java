@@ -19,9 +19,7 @@
 
 package org.dasein.cloud.test.storage;
 
-import org.dasein.cloud.CloudException;
-import org.dasein.cloud.InternalException;
-import org.dasein.cloud.OperationNotSupportedException;
+import org.dasein.cloud.*;
 import org.dasein.cloud.storage.Blob;
 import org.dasein.cloud.storage.BlobStoreSupport;
 import org.dasein.cloud.storage.FileTransfer;
@@ -482,7 +480,7 @@ public class StatefulObjectStoreTests {
                 }
                 //noinspection ThrowableResultOfMethodCallIgnored
                 if( task.getTransferError() != null ) {
-                    throw new CloudException(task.getTransferError());
+                    throw new GeneralCloudException("Download of "+targetFile+" had an error.", task.getTransferError(), CloudErrorType.GENERAL);
                 }
                 tm.out("Downloaded", targetFile.length() + " bytes");
                 assertFile(targetFile);
@@ -536,7 +534,7 @@ public class StatefulObjectStoreTests {
                 }
                 //noinspection ThrowableResultOfMethodCallIgnored
                 if( task.getTransferError() != null ) {
-                    throw new CloudException(task.getTransferError());
+                    throw new GeneralCloudException("Download of "+targetFile+" had an error.", task.getTransferError(), CloudErrorType.GENERAL);
                 }
                 tm.out("Downloaded", targetFile.length() + " bytes");
                 assertFile(targetFile);

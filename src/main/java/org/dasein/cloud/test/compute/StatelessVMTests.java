@@ -368,7 +368,7 @@ public class StatelessVMTests {
         }
         assertNotNull("No test imageId for the test", testImageId);
 
-        Iterable<VirtualMachineProduct> products = support.listProducts(testImageId, null);
+        Iterable<VirtualMachineProduct> products = support.listProducts(testImageId, VirtualMachineProductFilterOptions.getInstance());
         int totalByImage = 0;
 
         assertNotNull("listProducts() must return at least an empty collections and may not be null", products);
