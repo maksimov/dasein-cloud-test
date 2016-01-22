@@ -326,13 +326,13 @@ public class StatefulVMTests {
 
         VMLaunchOptions options = VMLaunchOptions.getInstance(productId, imageId, "dsnVmIp" + ( System.currentTimeMillis() % 10000 ), "Dasein Vm With IP Launch " + System.currentTimeMillis(), "Test launch for a VM with an IP");
 
-        String testVmIp = "192.168.200.100";
+        String testVmIp = "192.168.7.16";
         options.withPrivateIp(testVmIp);
-        options.withGatewayList("192.168.200.1");
-        options.withDnsServerList("8.8.8.8", "8.8.4.4");
+        options.withGatewayList("192.168.6.1");
+        options.withDnsServerList("192.168.6.1");
         options.withMetaData("vSphereNetMaskNothingToSeeHere", "255.255.255.0");
-        options.withDnsDomain("dasein.org");
-        options.withDnsSuffixList("dasein.org");
+        options.withDnsDomain("vsphere.local");
+        options.withDnsSuffixList("vsphere.local");
         options.withWinOrgName("dasein");
         options.withWinOwnerName("dasein");
         options.withWinWorkgroupName("workgroup");
@@ -342,11 +342,11 @@ public class StatefulVMTests {
             options.inVlan(null, testDataCenterId, vlanId);
             NetworkServices networkServices = tm.getProvider().getNetworkServices();
             if( networkServices == null ) {
-                fail("Test is inconsitent: vlanId is specified, but the cloud doesn't have network services");
+                fail("Test is inconsistent: vlanId is specified, but the cloud doesn't have network services");
             }
             VLANSupport vlanSupport = networkServices.getVlanSupport();
             if( vlanSupport == null ) {
-                fail("Test is inconsitent: vlanId is specified, but the cloud doesn't have VLAN support");
+                fail("Test is inconsistent: vlanId is specified, but the cloud doesn't have VLAN support");
             }
             VLAN vlan = vlanSupport.getVlan(vlanId);
             if( vlan == null ) {
