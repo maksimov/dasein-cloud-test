@@ -19,14 +19,41 @@
 
 package org.dasein.cloud.test.compute;
 
-import java.util.*;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
 import org.apache.log4j.Logger;
-import org.dasein.cloud.*;
-import org.dasein.cloud.compute.*;
+import org.dasein.cloud.CloudErrorType;
+import org.dasein.cloud.CloudException;
+import org.dasein.cloud.CloudProvider;
+import org.dasein.cloud.GeneralCloudException;
+import org.dasein.cloud.InternalException;
+import org.dasein.cloud.OperationNotSupportedException;
+import org.dasein.cloud.Requirement;
+import org.dasein.cloud.ResourceNotFoundException;
+import org.dasein.cloud.compute.ComputeServices;
+import org.dasein.cloud.compute.ImageClass;
+import org.dasein.cloud.compute.ImageCreateOptions;
+import org.dasein.cloud.compute.ImageFilterOptions;
+import org.dasein.cloud.compute.MachineImage;
+import org.dasein.cloud.compute.MachineImageFormat;
+import org.dasein.cloud.compute.MachineImageState;
+import org.dasein.cloud.compute.MachineImageSupport;
+import org.dasein.cloud.compute.MachineImageType;
+import org.dasein.cloud.compute.Platform;
+import org.dasein.cloud.compute.Snapshot;
+import org.dasein.cloud.compute.SnapshotCreateOptions;
+import org.dasein.cloud.compute.SnapshotState;
+import org.dasein.cloud.compute.SnapshotSupport;
+import org.dasein.cloud.compute.VMLaunchOptions;
+import org.dasein.cloud.compute.VirtualMachine;
+import org.dasein.cloud.compute.VirtualMachineProduct;
+import org.dasein.cloud.compute.VirtualMachineProductFilterOptions;
+import org.dasein.cloud.compute.VirtualMachineSupport;
+import org.dasein.cloud.compute.VmState;
+import org.dasein.cloud.compute.Volume;
+import org.dasein.cloud.compute.VolumeCreateOptions;
+import org.dasein.cloud.compute.VolumeFormat;
+import org.dasein.cloud.compute.VolumeProduct;
+import org.dasein.cloud.compute.VolumeState;
+import org.dasein.cloud.compute.VolumeSupport;
 import org.dasein.cloud.dc.DataCenter;
 import org.dasein.cloud.network.NetworkServices;
 import org.dasein.cloud.network.Subnet;
@@ -39,6 +66,13 @@ import org.dasein.cloud.test.network.NetworkResources;
 import org.dasein.util.CalendarWrapper;
 import org.dasein.util.uom.storage.Gigabyte;
 import org.dasein.util.uom.storage.Storage;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Random;
 
 import static org.junit.Assert.fail;
 
@@ -497,7 +531,7 @@ public class ComputeResources {
                     if( (vm == null || VmState.TERMINATED.equals(vm.getCurrentState()) || vm.getProviderVlanId() == null || !vm.getProviderVlanId().equalsIgnoreCase(vlanId)) && provisionIfNull ) {
                         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
                         if( testImageId == null ) {
-                            throw new ResourceNotFoundException("No test image exists for provisioning a virtual machine");
+                            throw new ResourceNotFoundException("Test image for provisioning a virtual machine", "n/a");
                         }
                         long now = System.currentTimeMillis();
                         String name = "dasein-test-" + label + " " + now;
@@ -887,13 +921,13 @@ public class ComputeResources {
         if( vmId == null ) {
             vmId = getTestVmId(DaseinTestManager.STATEFUL, VmState.RUNNING, true, null);
             if( vmId == null ) {
-                throw new ResourceNotFoundException("Could not identify a VM for imaging");
+                throw new ResourceNotFoundException("Test Virtual Machine", "n/a");
             }
         }
         VirtualMachine vm = vmSupport.getVirtualMachine(vmId);
 
         if( vm == null ) {
-            throw new ResourceNotFoundException("Could not identify a VM for imaging");
+            throw new ResourceNotFoundException("Test Virtual Machine", "n/a");
         }
         String imageId = vm.getProviderMachineImageId();
         MachineImage image = support.getImage(imageId);
@@ -936,7 +970,7 @@ public class ComputeResources {
         if( volumeId == null ) {
             volumeId = getTestVolumeId(DaseinTestManager.STATEFUL + ( System.currentTimeMillis() % 1000 ), true, null, null);
             if( volumeId == null ) {
-                throw new ResourceNotFoundException("No volume from which to create a snapshot");
+                throw new ResourceNotFoundException("Test Volume", "n/a");
             }
         }
         @SuppressWarnings("ConstantConditions") VolumeSupport vs = provider.getComputeServices().getVolumeSupport();
@@ -1226,7 +1260,7 @@ public class ComputeResources {
     public @Nonnull String provisionVM( @Nonnull VirtualMachineSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nonnull String hostPrefix, @Nullable String preferredDataCenter ) throws CloudException, InternalException {
         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
         if( testImageId == null ) {
-            throw new ResourceNotFoundException("No test image exists for provisioning a virtual machine");
+            throw new ResourceNotFoundException("Test image", "n/a");
         }
         long now = System.currentTimeMillis();
         String name = namePrefix + "-" + now;
@@ -1241,7 +1275,7 @@ public class ComputeResources {
     public @Nonnull Iterable<String> provisionManyVMs( @Nonnull VirtualMachineSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nonnull String hostPrefix, @Nullable String preferredDataCenter, int count ) throws CloudException, InternalException {
         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
         if( testImageId == null ) {
-            throw new ResourceNotFoundException("No test image exists for provisioning a virtual machine");
+            throw new ResourceNotFoundException("Test image", "n/a");
         }
         long now = System.currentTimeMillis();
         String name = namePrefix + "-" + now;

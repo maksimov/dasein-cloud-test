@@ -24,7 +24,6 @@ import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ci.CIServices;
 import org.dasein.cloud.ci.Topology;
 import org.dasein.cloud.ci.TopologyProvisionOptions;
-import org.dasein.cloud.ci.TopologyProvisionOptions.AccessConfig;
 import org.dasein.cloud.ci.TopologyProvisionOptions.DiskType;
 import org.dasein.cloud.ci.TopologyProvisionOptions.MaintenanceOption;
 import org.dasein.cloud.ci.TopologySupport;
@@ -38,18 +37,13 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import javax.annotation.Nonnull;
-
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 /**

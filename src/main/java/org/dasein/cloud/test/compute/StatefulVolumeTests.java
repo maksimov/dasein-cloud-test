@@ -864,8 +864,8 @@ public class StatefulVolumeTests {
                     catch( CloudException expected ) {
                         tm.ok("Caught a CloudException: " + expected.getMessage());
                     }
-                    catch ( OperationNotSupportedException ignore) {
-                        tm.ok("Caught an OperationNotSupportException: " + ignore.getMessage());
+                    catch ( InternalException ignore) {
+                        tm.ok("Caught an InternalException: " + ignore.getMessage());
                     }
                 }
                 else {
