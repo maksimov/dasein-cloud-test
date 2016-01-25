@@ -21,7 +21,14 @@ package org.dasein.cloud.test.identity;
 
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
-import org.dasein.cloud.identity.*;
+import org.dasein.cloud.identity.AccessKey;
+import org.dasein.cloud.identity.CloudGroup;
+import org.dasein.cloud.identity.CloudPolicy;
+import org.dasein.cloud.identity.CloudPolicyFilterOptions;
+import org.dasein.cloud.identity.CloudPolicyType;
+import org.dasein.cloud.identity.CloudUser;
+import org.dasein.cloud.identity.IdentityAndAccessSupport;
+import org.dasein.cloud.identity.IdentityServices;
 import org.dasein.cloud.test.DaseinTestManager;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -32,7 +39,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -265,36 +271,6 @@ public class StatelessIAMTests {
                 tm.ok("Not subscribed to IAM services, so no policies exist");
             }
             else if( supportsAccountManagedPolicies ) {
-                fail("Provider " + tm.getProvider().getProviderName() + " declares its support for provider managed policies, however there were no policies returned");
-            }
-            else {
-                tm.warn("No policies were returned so this test may be invalid");
-            }
-        }
-    }
-
-    @Test
-    public void listAccessKeys() throws CloudException, InternalException {
-        assumeNotNull(identityServices);
-        assumeNotNull(identityAndAccessSupport);
-
-        Iterable<AccessKey> accessKeys = identityAndAccessSupport.listAccessKeys(null);
-        int count = 0;
-
-        assertNotNull("The access keys listing may not be null regardless of subscription level", accessKeys);
-
-        for( AccessKey accessKey : accessKeys ) {
-            count++;
-            tm.out("Access Key", accessKey);
-        }
-        tm.out("Total Access Key Count", count);
-        boolean supportsAccessKeys = identityAndAccessSupport.getCapabilities().supportsApiAccess();
-
-        if( count < 1 ) {
-            if( !identityAndAccessSupport.isSubscribed() ) {
-                tm.ok("Not subscribed to IAM services, so no policies exist");
-            }
-            else if( supportsAccessKeys ) {
                 fail("Provider " + tm.getProvider().getProviderName() + " declares its support for provider managed policies, however there were no policies returned");
             }
             else {
