@@ -680,13 +680,18 @@ public class StatelessVLANTests {
         VLANSupport support = services.getVlanSupport();
 
         if( support != null ) {
-          InternetGateway internetGateway = support.getInternetGatewayById(UUID.randomUUID().toString());
+            if ( support.getCapabilities().supportsInternetGatewayCreation() ) {
+                InternetGateway internetGateway = support.getInternetGatewayById(UUID.randomUUID().toString());
 
-          tm.out("Bogus Internet Gateway", internetGateway);
-          assertNull("Bogus internet gateway was supposed to be null, but got a valid internet gateway", internetGateway);
+                tm.out("Bogus Internet Gateway", internetGateway);
+                assertNull("Bogus internet gateway was supposed to be null, but got a valid internet gateway", internetGateway);
+            }
+            else {
+                tm.ok("No internet gateway support in this cloud");
+            }
         }
         else {
-          tm.ok("No internet gateway support in this cloud");
+          tm.ok("No vlan support in this cloud");
         }
       }
       else {
@@ -843,37 +848,39 @@ public class StatelessVLANTests {
         VLANSupport support = services.getVlanSupport();
 
         if( support != null ) {
-          if( testVLANId != null ) {
-            Iterable<InternetGateway> internetGateways = support.listInternetGateways(testVLANId);
-            int count = 0;
+            if ( support.getCapabilities().supportsInternetGatewayCreation() ) {
+                if ( testVLANId != null ) {
+                    Iterable<InternetGateway> internetGateways = support.listInternetGateways(testVLANId);
+                    int count = 0;
 
-            assertNotNull("The list of internet gateways may not be null (though it can be empty)", internetGateways);
-            for( InternetGateway internetgateway : internetGateways ) {
-              count++;
-              tm.out("Internet Gateway", internetgateway);
-            }
-            tm.out("Total Internet Gateway Count for " + testVLANId, count);
+                    assertNotNull("The list of internet gateways may not be null (though it can be empty)", internetGateways);
+                    for (InternetGateway internetgateway : internetGateways) {
+                        count++;
+                        tm.out("Internet Gateway", internetgateway);
+                    }
+                    tm.out("Total Internet Gateway Count for " + testVLANId, count);
 
-            if( !support.isSubscribed() ) {
-              assertTrue("The call to list internet gateways returned internet gateways even though the account is marked as not subscribed", count == 0);
-            }
-            else if( count == 0 ) {
-              tm.warn("No internet gateways appeared in the list and thus the test may not be valid");
-            }
-            if( count > 0 ) {
-              for( InternetGateway internetgateway : internetGateways )  {
-                assertInternetGatewayContent(internetgateway, testVLANId);
-              }
-            }
-          }
-          else {
-            if( !support.isSubscribed() ) {
-              tm.ok("No test VLAN was identified for tests due to a lack of subscription to VLAN support");
+                    if ( !support.isSubscribed() ) {
+                        assertTrue("The call to list internet gateways returned internet gateways even though the account is marked as not subscribed", count == 0);
+                    } else if ( count == 0 ) {
+                        tm.warn("No internet gateways appeared in the list and thus the test may not be valid");
+                    }
+                    if ( count > 0 ) {
+                        for (InternetGateway internetgateway : internetGateways) {
+                            assertInternetGatewayContent(internetgateway, testVLANId);
+                        }
+                    }
+                } else {
+                    if ( !support.isSubscribed() ) {
+                        tm.ok("No test VLAN was identified for tests due to a lack of subscription to VLAN support");
+                    } else {
+                        fail("No test VLAN was found for running the stateless test: " + name.getMethodName());
+                    }
+                }
             }
             else {
-              fail("No test VLAN was found for running the stateless test: " + name.getMethodName());
+                tm.ok("Internet gateways not supported");
             }
-          }
         }
         else {
           tm.ok("No VLAN support in this cloud");
