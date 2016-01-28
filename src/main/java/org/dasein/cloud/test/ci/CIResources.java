@@ -25,14 +25,18 @@ import org.dasein.cloud.ci.CIServices;
 import org.dasein.cloud.ci.ConvergedInfrastructure;
 import org.dasein.cloud.ci.ConvergedInfrastructureSupport;
 import org.dasein.cloud.ci.Topology;
+import org.dasein.cloud.ci.TopologyProvisionOptions;
 import org.dasein.cloud.ci.TopologyState;
 import org.dasein.cloud.ci.TopologySupport;
 import org.dasein.cloud.test.DaseinTestManager;
+import org.dasein.cloud.test.compute.ComputeResources;
+import org.dasein.cloud.test.network.NetworkResources;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * [Class Documentation]
@@ -42,6 +46,7 @@ import java.util.Map;
  */
 public class CIResources {
     static private final Logger logger = Logger.getLogger(CIResources.class);
+    static private final Random random = new Random();
 
     private CloudProvider   provider;
 
@@ -108,19 +113,22 @@ public class CIResources {
     }
 
     public @Nullable String getTestTopologyId(@Nonnull String label, boolean provisionIfNull) {
-        if( label.equals(DaseinTestManager.STATELESS) ) {
-            for( Map.Entry<String,String> entry : testTopologies.entrySet() ) {
-                if( !entry.getKey().startsWith(DaseinTestManager.REMOVED) ) {
-                    String id = entry.getValue();
+        String id = testTopologies.get(label);
+        if (id == null) {
+            if ( label.equals(DaseinTestManager.STATELESS) ) {
+                for (Map.Entry<String, String> entry : testTopologies.entrySet()) {
+                    if ( !entry.getKey().startsWith(DaseinTestManager.REMOVED) ) {
+                        id = entry.getValue();
 
-                    if( id != null ) {
-                        return id;
+                        if ( id != null ) {
+                            return id;
+                        }
                     }
                 }
+                id = findStatelessTopology();
             }
-            return findStatelessTopology();
         }
-        String id = testTopologies.get(label);
+
 
         if( id != null ) {
             return id;
@@ -135,8 +143,25 @@ public class CIResources {
 
             if( support != null ) {
                 try {
-                    // TODO: when support for creating topologies is implemented, use this
-                    return null;
+                    NetworkResources networkResources = DaseinTestManager.getNetworkResources();
+                    String testNetworkId = networkResources.getTestVLANId(DaseinTestManager.STATELESS, false, null);
+                    ComputeResources computeResources = DaseinTestManager.getComputeResources();
+                    String testImageId = computeResources.getTestImageId(DaseinTestManager.STATELESS, false);
+                    String testProductId = computeResources.getTestVMProductId();
+
+                    TopologyProvisionOptions withTopologyOptions = TopologyProvisionOptions.getInstance("dsn-topology"+String.valueOf(random.nextInt(10000)), "description", testProductId, true);
+
+                    withTopologyOptions = withTopologyOptions.withAutomaticRestart(false);
+                    withTopologyOptions = withTopologyOptions.withMaintenanceOption(TopologyProvisionOptions.MaintenanceOption.TERMINATE_VM_INSTANCE);
+
+                    withTopologyOptions = withTopologyOptions.withNetworkInterface(testNetworkId, null, true); // ,accessConfigs);
+                    withTopologyOptions = withTopologyOptions.withAttachedDisk("dsn-topology-disk"+String.valueOf(random.nextInt(1000)), TopologyProvisionOptions.DiskType.STANDARD_PERSISTENT_DISK, testImageId, true, true);
+                    boolean result = support.createTopology(withTopologyOptions);
+                    if (result) {
+                        id = withTopologyOptions.getProductName();
+                        testTopologies.put(DaseinTestManager.STATEFUL, id);
+                        return id;
+                    }
                 }
                 catch( Throwable ignore ) {
                     return null;
