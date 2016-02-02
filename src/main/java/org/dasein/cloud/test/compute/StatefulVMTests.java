@@ -256,7 +256,7 @@ public class StatefulVMTests {
 
             if( support != null ) {
                 if( support.isSubscribed() ) {
-                    @SuppressWarnings("ConstantConditions") String id = DaseinTestManager.getComputeResources().provisionVM(support, "testLaunch", "dasein-test-launch-" + tm.getUserName(), "dsnlaunch", testDataCenterId);
+                    @SuppressWarnings("ConstantConditions") String id = DaseinTestManager.getComputeResources().provisionVM(support, DaseinTestManager.STATEFUL, "dasein-test-launch-" + tm.getUserName(), "dsnlaunch", testDataCenterId);
 
                     tm.out("Launched", id);
                     assertNotNull("Attempts to provisionVM a virtual machine MUST return a valid ID", id);
@@ -273,7 +273,7 @@ public class StatefulVMTests {
                 else {
                     try {
                         //noinspection ConstantConditions
-                        DaseinTestManager.getComputeResources().provisionVM(support, "failure", "Should Fail", "failure", testDataCenterId);
+                        DaseinTestManager.getComputeResources().provisionVM(support, DaseinTestManager.STATEFUL, "Should Fail", "failure", testDataCenterId);
                         fail("Attempt to launch VM should not succeed when the account is not subscribed to virtual machine services");
                     } catch( CloudException ok ) {
                         tm.ok("Got exception when not subscribed: " + ok.getMessage());
