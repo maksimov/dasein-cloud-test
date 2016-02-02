@@ -52,11 +52,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 
 /**
  * Consolidates and manages cloud resources shared across many different tests.
@@ -80,7 +76,7 @@ public class DaseinTestManager {
     static private PlatformResources platformResources;
     static private StorageResources  storageResources;
 
-    static private Set<String>   exclusions;
+    static private Set<String> exclusions;
     static private Set<String>   inclusions;
 
     static private int  skipCount;
@@ -280,6 +276,7 @@ public class DaseinTestManager {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     if( dirty ) {
+                        System.out.println("Cleaning up, please wait...");
                         cleanUp();
                     }
                 }
