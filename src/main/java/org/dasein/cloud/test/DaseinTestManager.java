@@ -20,10 +20,20 @@
 package org.dasein.cloud.test;
 
 import org.apache.log4j.Logger;
-import org.dasein.cloud.*;
+import org.dasein.cloud.Cloud;
+import org.dasein.cloud.CloudException;
+import org.dasein.cloud.CloudProvider;
+import org.dasein.cloud.ContextRequirements;
+import org.dasein.cloud.InternalException;
+import org.dasein.cloud.ProviderContext;
 import org.dasein.cloud.compute.VmState;
 import org.dasein.cloud.compute.VolumeFormat;
-import org.dasein.cloud.network.*;
+import org.dasein.cloud.network.Firewall;
+import org.dasein.cloud.network.FirewallSupport;
+import org.dasein.cloud.network.IPVersion;
+import org.dasein.cloud.network.LbProtocol;
+import org.dasein.cloud.network.LoadBalancerSupport;
+import org.dasein.cloud.network.NetworkServices;
 import org.dasein.cloud.platform.DatabaseEngine;
 import org.dasein.cloud.storage.Blob;
 import org.dasein.cloud.test.ci.CIResources;
@@ -37,9 +47,16 @@ import org.dasein.util.CalendarWrapper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.*;
-import java.security.Provider;
-import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * Consolidates and manages cloud resources shared across many different tests.
@@ -318,6 +335,9 @@ public class DaseinTestManager {
         return networkResources;
     }
 
+    static public @Nullable CIResources getCiResources() {
+        return ciResources;
+    }
     static public @Nullable PlatformResources getPlatformResources() {
         return platformResources;
     }
@@ -715,6 +735,14 @@ public class DaseinTestManager {
 
     public @Nullable String getTestTopologyId(@Nonnull String label, boolean provisionIfNull) {
         return (ciResources == null ? null : ciResources.getTestTopologyId(label, provisionIfNull));
+    }
+
+    public @Nullable String getTestCIId(@Nonnull String label, boolean provisionIfNull) {
+        return (ciResources == null ? null : ciResources.getTestCIId(label, provisionIfNull));
+    }
+
+    public @Nullable String getTestHttpLoadBalancerId(@Nonnull String label, boolean provisionIfNull) {
+        return (ciResources == null ? null : ciResources.getTestConvergedHttpLoadBalancerId(label, provisionIfNull));
     }
 
     public @Nullable String getTestUserId(@Nonnull String label, boolean provisionIfNull, @Nullable String preferredGroupId) {
