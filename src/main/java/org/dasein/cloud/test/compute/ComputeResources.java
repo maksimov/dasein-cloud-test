@@ -1126,14 +1126,18 @@ public class ComputeResources {
                 }
             }
         }
-        if( options.getVlanId() == null && Requirement.REQUIRED.equals(support.getCapabilities().identifyVlanRequirement()) ) {
+        if(( options.getVlanId() == null && Requirement.REQUIRED.equals(support.getCapabilities().identifyVlanRequirement()))
+                || ( options.getSubnetId() == null && Requirement.REQUIRED.equals(support.getCapabilities().identifySubnetRequirement()) ) ) {
             NetworkResources network = DaseinTestManager.getNetworkResources();
 
             if( network != null ) {
-                String networkId = network.getTestVLANId(label, true, preferredDataCenter);
-
+                String networkId = network.getTestVLANId(label, false /** true **/, preferredDataCenter);
                 if( networkId == null ) {
                     networkId = network.getTestVLANId(DaseinTestManager.STATELESS, false, preferredDataCenter);
+                }
+                // only provision a network if no other networks been found thus far
+                if( networkId == null ) {
+                    networkId = network.getTestVLANId(label, true, preferredDataCenter);
                 }
                 String subnetId = network.getTestSubnetId(DaseinTestManager.STATEFUL, true, networkId, preferredDataCenter);
 
