@@ -71,7 +71,7 @@ public class DaseinTestManager {
     static public final String STATELESS = "stateless";
     static public final String REMOVED   = "removed";
 
-    static private HashMap<String,Integer> apiAudit = new HashMap<String, Integer>();
+    static private Map<String,Integer> apiAudit = new HashMap<String, Integer>();
 
     static private CIResources       ciResources;
     static private ComputeResources  computeResources;
@@ -280,7 +280,6 @@ public class DaseinTestManager {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     if( dirty ) {
-                        System.out.println("Cleaning up, please wait...");
                         cleanUp();
                     }
                 }
@@ -293,6 +292,7 @@ public class DaseinTestManager {
     }
 
     static public void cleanUp() {
+        System.out.println("Cleaning up, please wait...");
         Logger logger = Logger.getLogger(DaseinTestManager.class);
         int provisioned = 0;
         int cleaned = 0;
