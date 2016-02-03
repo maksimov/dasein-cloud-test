@@ -276,7 +276,6 @@ public class DaseinTestManager {
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     if( dirty ) {
-                        System.out.println("Cleaning up, please wait...");
                         cleanUp();
                     }
                 }
