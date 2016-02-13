@@ -296,8 +296,11 @@ public class StatefulVMTests {
             tm.ok("No compute services in this cloud");
             return;
         }
+        ComputeResources compute = DaseinTestManager.getComputeResources();
+        if( compute == null ) {
+            fail("Test compute resources aren't initialised. Panic!");
+        }
         VirtualMachineSupport support = services.getVirtualMachineSupport();
-
         if( support == null ) {
             tm.ok("No virtual machine support in this cloud");
             return;
@@ -311,11 +314,6 @@ public class StatefulVMTests {
                 tm.ok("Got exception when not subscribed: " + ok.getMessage());
                 return;
             }
-        }
-
-        ComputeResources compute = DaseinTestManager.getComputeResources();
-        if( compute == null ) {
-            fail("Test compute resources aren't initialised. Panic!");
         }
         NetworkResources networkResources = DaseinTestManager.getNetworkResources();
         if( networkResources == null ) {
@@ -396,7 +394,6 @@ public class StatefulVMTests {
         }
         else {
             assertFalse("Private IP should not have been assigned, according to driver capabilities: " + testVmIp, ipFound);
-            
         }
     }
 
