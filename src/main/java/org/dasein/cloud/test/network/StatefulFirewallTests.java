@@ -328,7 +328,10 @@ public class StatefulFirewallTests {
         }
 
         if( testRuleId == null ) {
-            if( support.getCapabilities().supportsRules(direction, permission, vlanTest) ) {
+            if( !support.getCapabilities().supportsFirewallCreation(vlanTest) ) {
+                tm.warn("Could not create a test firewall to verify rule deletion, so this test is definitely not valid");
+            }
+            else if( support.getCapabilities().supportsRules(direction, permission, vlanTest) ) {
                 RuleTargetType type = RuleTargetType.CIDR;
 
                 if( name.getMethodName().contains("Global") ) {

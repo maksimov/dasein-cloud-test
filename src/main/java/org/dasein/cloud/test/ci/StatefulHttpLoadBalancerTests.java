@@ -19,25 +19,17 @@
 
 package org.dasein.cloud.test.ci;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ci.CIServices;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancer;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancer.BackendService;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancer.ForwardingRule;
-import org.dasein.cloud.ci.ConvergedHttpLoadBalancer.HealthCheck;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancer.TargetHttpProxy;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancer.UrlSet;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancerFilterOptions;
 import org.dasein.cloud.ci.ConvergedHttpLoadBalancerSupport;
+import org.dasein.cloud.ci.ConvergedInfrastructure;
 import org.dasein.cloud.test.DaseinTestManager;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -47,12 +39,24 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
+
 /**
  * Tests support for Dasein Cloud Replicapools which represent complex, multi-resource groups.
  */
 public class StatefulHttpLoadBalancerTests {
     static private DaseinTestManager tm;
-    private String testTopologyId;
+    static private final Random random = new Random();
+    private String ciSource;
+    private String testHttpLoadBalancerId;
 
     @BeforeClass
     static public void configure() {
@@ -75,11 +79,49 @@ public class StatefulHttpLoadBalancerTests {
     public void before() {
         tm.begin(name.getMethodName());
         assumeTrue(!tm.isTestSkipped());
-        testTopologyId = tm.getTestTopologyId(DaseinTestManager.STATELESS, false);
+        String testCIId = tm.getTestCIId(DaseinTestManager.STATELESS, true);
+        try {
+            ConvergedInfrastructure ci = tm.getProvider().getCIServices().getConvergedInfrastructureSupport().getConvergedInfrastructure(testCIId);
+            ciSource = ci.getProviderConvergedInfrastructureId();
+            //horrible hack to try keep tests generic but work for google
+            if (tm.getProvider().getCloudName().equals("GCE")) {
+                ciSource = ci.getTag("instanceGroupLink").toString();
+            }
+        }
+        catch (Exception e) {
+
+        }
+
+        //create testHttpLoadBalancer
+        if (name.getMethodName().equals("removeHttpLoadBalancers")) {
+            testHttpLoadBalancerId = tm.getTestHttpLoadBalancerId(DaseinTestManager.REMOVED, true);
+        }
+        else {
+            testHttpLoadBalancerId = tm.getTestHttpLoadBalancerId(DaseinTestManager.STATELESS, true);
+        }
     }
 
     @After
     public void after() {
+        if (name.getMethodName().startsWith("create")) {
+            CIServices services = tm.getProvider().getCIServices();
+
+            if (services != null) {
+                if (services.hasConvergedHttpLoadBalancerSupport()) {
+                    ConvergedHttpLoadBalancerSupport support = services.getConvergedHttpLoadBalancerSupport();
+                    if (support != null) {
+
+                        try {
+                            tm.out("Removing "+name.getMethodName().toLowerCase());
+                            support.removeConvergedHttpLoadBalancers(name.getMethodName().toLowerCase());
+                        }
+                        catch ( Throwable t ) {
+                            tm.warn("Unable to remove test load balancer from create test");
+                        }
+                    }
+                }
+            }
+        }
         tm.end();
     }
 
@@ -114,8 +156,10 @@ public class StatefulHttpLoadBalancerTests {
             for (BackendService backendService : backendServices) {
                 if (backendService.getName().equals(name)) {
                     found = true;
-                    //assertTrue("backendService description does not match.", backendService.getDescription().equals(description));
-                    assertTrue("backendService selfLink does not match.", backendService.getSelfLink().equals(selfUrl));
+                    assertEquals(description, backendService.getDescription());
+                    if (selfUrl != null) {
+                        assertEquals(selfUrl, backendService.getSelfLink());
+                    }
                 }
             }
         }
@@ -127,9 +171,10 @@ public class StatefulHttpLoadBalancerTests {
         List<TargetHttpProxy> targetHttpProxies = createdHttpLoadBalancer.getTargetHttpProxies();
         if (null != targetHttpProxies) {
             for (TargetHttpProxy targetHttpProxy : targetHttpProxies) {
-                found = true;
-                assertTrue("targetHttpProxy name does not match.", targetHttpProxy.getName().equals(name));
-                assertTrue("targetHttpProxy description does not match.", targetHttpProxy.getDescription().equals(description));
+                if (targetHttpProxy.getName().equals(name)) {
+                    found = true;
+                    assertTrue("targetHttpProxy description does not match.", targetHttpProxy.getDescription().equals(description));
+                }
             }
         }
         assertTrue("TargetHttpProxy not found.", found);
@@ -140,13 +185,14 @@ public class StatefulHttpLoadBalancerTests {
         List<ForwardingRule> forwardingRules = createdHttpLoadBalancer.getForwardingRules();
         if (null != forwardingRules) {
             for (ForwardingRule forwardingRule : forwardingRules) {
-                found = true;
-                assertTrue("forwardingRule name does not match.", forwardingRule.getName().equals(name));
-                assertTrue("forwardingRule description does not match.", forwardingRule.getDescription().equals(description));
-                //assertTrue("forwardingRule ipAddress does not match.", forwardingRule.getIpAddress().equals(ipAddress));
-                assertTrue("forwardingRule ipProtocol does not match.", forwardingRule.getIpProtocol().equals(ipProtocol));
-                assertTrue("forwardingRule portRange does not match.", forwardingRule.getPortRange().equals(portRange));
-                assertTrue("forwardingRule target does not match.", forwardingRule.getTarget().equals(target));
+                if (forwardingRule.getName().equals(name)) {
+                    found = true;
+                    assertTrue("forwardingRule description does not match.", forwardingRule.getDescription().equals(description));
+                    //assertTrue("forwardingRule ipAddress does not match.", forwardingRule.getIpAddress().equals(ipAddress));
+                    assertTrue("forwardingRule ipProtocol does not match.", forwardingRule.getIpProtocol().equals(ipProtocol));
+                    assertTrue("forwardingRule portRange does not match.", forwardingRule.getPortRange().equals(portRange));
+                    assertTrue("forwardingRule target does not match.", forwardingRule.getTarget().equals(target));
+                }
             }
         }
         assertTrue("forwardingRule not found.", found);
@@ -186,7 +232,7 @@ public class StatefulHttpLoadBalancerTests {
                 ConvergedHttpLoadBalancerSupport support = services.getConvergedHttpLoadBalancerSupport();
                 if (support != null) {
 
-                    ConvergedHttpLoadBalancer result = support.getConvergedHttpLoadBalancer("test-http-load-balancer");
+                    ConvergedHttpLoadBalancer result = support.getConvergedHttpLoadBalancer(testHttpLoadBalancerId);
                 }
             }
         }
@@ -200,8 +246,8 @@ public class StatefulHttpLoadBalancerTests {
             if (services.hasConvergedHttpLoadBalancerSupport()) {
                 ConvergedHttpLoadBalancerSupport support = services.getConvergedHttpLoadBalancerSupport();
                 if (support != null) {
-
-                    support.removeConvergedHttpLoadBalancers("test-http-load-balancer");
+                    tm.out("Trying to remove load balancer "+testHttpLoadBalancerId);
+                    support.removeConvergedHttpLoadBalancers(testHttpLoadBalancerId);
                 }
             }
         }
@@ -217,24 +263,17 @@ public class StatefulHttpLoadBalancerTests {
             if (services.hasConvergedHttpLoadBalancerSupport()) {
                 ConvergedHttpLoadBalancerSupport support = services.getConvergedHttpLoadBalancerSupport();
                 if (support != null) {
-                    String instanceGroup1 = "https://www.googleapis.com/resourceviews/v1beta2/projects/qa-project-2/zones/europe-west1-b/resourceViews/instance-group-1";
-                    String instanceGroup2 = "https://www.googleapis.com/resourceviews/v1beta2/projects/qa-project-2/zones/us-central1-f/resourceViews/instance-group-2";
+                    String instanceGroup1 = ciSource;
                     Map<String, String> pathMap = new HashMap<String, String>();
                     String defaultBackend = "test-backend-1";
-                    String backend2 = "test-backend-2";
-                    String backend3 = "test-backend-3";
                     pathMap.put("/*", defaultBackend);
-                    pathMap.put("/video, /video/*", backend2);
-                    pathMap.put("/audio, /audio/*", backend3);
-                    String healthCheck1 = "test-health-check";
-                    String targetProxy1 = "target-proxy-1";
-                    String targetProxy2 = "target-proxy-2";
+                    String healthCheck1 = "test-new-health-check";
+                    String targetProxy1 = "target-proxy-"+random.nextInt(1000);
+                    String targetProxy2 = "target-proxy-"+random.nextInt(1000);
                     ConvergedHttpLoadBalancer withExperimentalConvergedHttpLoadbalancerOptions = ConvergedHttpLoadBalancer
-                            .getInstance("test-http-load-balancer", "test-http-load-balancer-description", defaultBackend)
+                            .getInstance(name.getMethodName().toLowerCase(), "test-http-load-balancer-description", defaultBackend)
                             .withHealthCheck(healthCheck1, healthCheck1 + "-description", null, 80, "/", 5, 5, 2, 2) //ONLY ONE ALLOWED
                             .withBackendService(defaultBackend, defaultBackend + "-description", 80, "http", "HTTP", new String[] {healthCheck1}, new String[] {instanceGroup1}, 30)
-                            .withBackendService(backend2, backend2 + "-description", 80, "http", "HTTP", new String[] {healthCheck1}, new String[] {instanceGroup2}, 30)
-                            .withBackendService(backend3, backend3 + "-description", 80, "http", "HTTP", new String[] {healthCheck1}, new String[] {instanceGroup1, instanceGroup2}, 30)
                             .withUrlSet("url-map-1", "url-map-description", "*", pathMap)
                             .withUrlSet("url-map-2", "url-map-2-description", "*.net", pathMap)
                             .withTargetHttpProxy(targetProxy1, targetProxy1 + "-description")
@@ -243,14 +282,25 @@ public class StatefulHttpLoadBalancerTests {
                             .withForwardingRule(targetProxy2 + "-fr", targetProxy2 + "-fr-description", null, "TCP", "8080", targetProxy2);
 
                     String convergedHttpLoadBalancerSelfUrl = support.createConvergedHttpLoadBalancer(withExperimentalConvergedHttpLoadbalancerOptions);
+                    ConvergedHttpLoadBalancer createdHttpLoadBalancer = support.getConvergedHttpLoadBalancer(convergedHttpLoadBalancerSelfUrl);
 
+                    verifyConvergedHttpLoadBalancerNameDescription(createdHttpLoadBalancer, name.getMethodName().toLowerCase(), "test-http-load-balancer-description", convergedHttpLoadBalancerSelfUrl);
+                    verifyConvergedHttpLoadBalancerUrlSetPresent(createdHttpLoadBalancer, "url-map-1", "url-map-description", "*", pathMap);  // why no description
+                    verifyConvergedHttpLoadBalancerBackendServicePresent(createdHttpLoadBalancer, defaultBackend, defaultBackend+"-description", null);
+                    verifyConvergedHttpLoadBalancerTargetHttpProxyPresent(createdHttpLoadBalancer, targetProxy1, targetProxy1 + "-description");
+                    verifyConvergedHttpLoadBalancerForwardingRulePresent(createdHttpLoadBalancer, targetProxy1 + "-fr", targetProxy1 + "-fr-description", null, "TCP", "80-80", targetProxy1);
+
+                    tm.ok("createHttpLoadBalancer");
                     tm.out("Subscribed", support.isSubscribed());
                 } else {
-                    tm.ok(tm.getProvider().getCloudName() + " does not support topologies");
+                    tm.ok(tm.getProvider().getCloudName() + " does not support converged http load balancers");
                 }
             }
+            else {
+                tm.ok(tm.getProvider().getCloudName() + " does not support converged http load balancer");
+            }
         } else {
-            tm.ok(tm.getProvider().getCloudName() + " does not support compute services");
+            tm.ok(tm.getProvider().getCloudName() + " does not support converged infrastructure services");
         }
     }
 
@@ -262,22 +312,34 @@ public class StatefulHttpLoadBalancerTests {
             if (services.hasConvergedHttpLoadBalancerSupport()) {
                 ConvergedHttpLoadBalancerSupport support = services.getConvergedHttpLoadBalancerSupport();
                 if (support != null) {
+
+                    //get health check from test http load balancer
+                    ConvergedHttpLoadBalancer hlb = support.getConvergedHttpLoadBalancer(testHttpLoadBalancerId);
+                    ConvergedHttpLoadBalancer.HealthCheck hc = hlb.getHealthChecks().iterator().next();
                     Map<String, String> pathMap = new HashMap<String, String>();
-                    String instanceGroup1 = "https://www.googleapis.com/resourceviews/v1beta2/projects/qa-project-2/zones/europe-west1-b/resourceViews/instance-group-1";
+                    String instanceGroup1 = ciSource;
                     String defaultBackend = "test-backend-4";
                     pathMap.put("/*", defaultBackend);
                     String targetProxy = "target-proxy-3";
                     ConvergedHttpLoadBalancer withExperimentalConvergedHttpLoadbalancerOptions = ConvergedHttpLoadBalancer
-                            .getInstance("test-http-load-balancer-with-existing-health-check", "test-http-load-balancer-description", defaultBackend)
+                            .getInstance(name.getMethodName().toLowerCase(), "test-http-load-balancer-description", defaultBackend)
                             .withUrlSet("url-map-1", "url-map-description", "*", pathMap)
-                            .withExistingHealthCheck("https://www.googleapis.com/compute/v1/projects/qa-project-2/global/httpHealthChecks/test-health-check")
-                            .withBackendService(defaultBackend, defaultBackend + "-description", 80, "http", "HTTP", new String[] {"test-health-check"}, new String[] {instanceGroup1}, 30)
+                            .withExistingHealthCheck(hc.getSelfLink())
+                            .withBackendService(defaultBackend, defaultBackend + "-description", 80, "http", "HTTP", new String[] {hc.getName()}, new String[] {instanceGroup1}, 30)
                             .withTargetHttpProxy(targetProxy, targetProxy + "-description")
                             .withForwardingRule(targetProxy + "-fr", targetProxy + "-fr-description", null, "TCP", "80", targetProxy);
 
                     String convergedHttpLoadBalancerSelfUrl = support.createConvergedHttpLoadBalancer(withExperimentalConvergedHttpLoadbalancerOptions);
 
-                    tm.out("Subscribed", support.isSubscribed());
+                    ConvergedHttpLoadBalancer createdHttpLoadBalancer = support.getConvergedHttpLoadBalancer(convergedHttpLoadBalancerSelfUrl);
+                    verifyConvergedHttpLoadBalancerNameDescription(createdHttpLoadBalancer, name.getMethodName().toLowerCase(), "test-http-load-balancer-description", convergedHttpLoadBalancerSelfUrl);
+                    verifyConvergedHttpLoadBalancerUrlSetPresent(createdHttpLoadBalancer, "url-map-1", "url-map-description", "*", pathMap);  // why no description
+                    verifyConvergedHttpLoadBalancerBackendServicePresent(createdHttpLoadBalancer, defaultBackend, defaultBackend+"-description", null);
+                    verifyConvergedHttpLoadBalancerTargetHttpProxyPresent(createdHttpLoadBalancer, targetProxy, targetProxy + "-description");
+                    verifyConvergedHttpLoadBalancerForwardingRulePresent(createdHttpLoadBalancer, targetProxy + "-fr", targetProxy + "-fr-description", null, "TCP", "80-80", targetProxy);
+
+                    tm.ok("createHttpLoadBalancer");
+
                 } else {
                     tm.ok(tm.getProvider().getCloudName() + " does not support topologies");
                 }
@@ -301,25 +363,29 @@ public class StatefulHttpLoadBalancerTests {
                         support.getCapabilities().supportsTargetHttpProxies() &&
                         support.getCapabilities().supportsForwardingRules() && 
                         support.getCapabilities().supportsUsingExistingBackendService()) {
+                            //get backend service from test http load balancer
+                            ConvergedHttpLoadBalancer hlb = support.getConvergedHttpLoadBalancer(testHttpLoadBalancerId);
+                            ConvergedHttpLoadBalancer.BackendService bs = hlb.getBackendServices().get(0);
+
                             Map<String, String> pathMap = new HashMap<String, String>();
-                            String defaultBackend = "test-backend-1";
+                            String defaultBackend = bs.getName();
                             pathMap.put("/*", defaultBackend);
                             String targetProxy = "target-proxy-4";
                             ConvergedHttpLoadBalancer withExperimentalConvergedHttpLoadbalancerOptions = ConvergedHttpLoadBalancer
-                                    .getInstance("test-http-load-balancer-with-existing-backend-service", "test-http-load-balancer-description", defaultBackend)
+                                    .getInstance(name.getMethodName().toLowerCase(), "test-http-load-balancer-description", defaultBackend)
                                     .withUrlSet("url-map-1", "url-map-description", "*", pathMap)
-                                    .withExistingBackendService("https://www.googleapis.com/compute/v1/projects/qa-project-2/global/backendServices/test-backend-1")
+                                    .withExistingBackendService(bs.getSelfLink())
                                     .withTargetHttpProxy(targetProxy, targetProxy + "-description")
                                     .withForwardingRule(targetProxy + "-fr", targetProxy + "-fr-description", null, "TCP", "80", targetProxy);
 
                             String convergedHttpLoadBalancerSelfUrl = support.createConvergedHttpLoadBalancer(withExperimentalConvergedHttpLoadbalancerOptions);
                             // VERIFY IT WAS CREATED CORRECTLY
 
-                            ConvergedHttpLoadBalancer createdHttpLoadBalancer = support.getConvergedHttpLoadBalancer("test-http-load-balancer-with-existing-backend-service");
+                            ConvergedHttpLoadBalancer createdHttpLoadBalancer = support.getConvergedHttpLoadBalancer(convergedHttpLoadBalancerSelfUrl);
 
-                            verifyConvergedHttpLoadBalancerNameDescription(createdHttpLoadBalancer, "test-http-load-balancer-with-existing-backend-service", "test-http-load-balancer-description", convergedHttpLoadBalancerSelfUrl);
+                            verifyConvergedHttpLoadBalancerNameDescription(createdHttpLoadBalancer, name.getMethodName().toLowerCase(), "test-http-load-balancer-description", convergedHttpLoadBalancerSelfUrl);
                             verifyConvergedHttpLoadBalancerUrlSetPresent(createdHttpLoadBalancer, "url-map-1", "url-map-description", "*", pathMap);  // why no description
-                            verifyConvergedHttpLoadBalancerBackendServicePresent(createdHttpLoadBalancer, "test-backend-1", "", "https://www.googleapis.com/compute/v1/projects/qa-project-2/global/backendServices/test-backend-1");
+                            verifyConvergedHttpLoadBalancerBackendServicePresent(createdHttpLoadBalancer, defaultBackend, defaultBackend+"-description", bs.getSelfLink());
                             verifyConvergedHttpLoadBalancerTargetHttpProxyPresent(createdHttpLoadBalancer, targetProxy, targetProxy + "-description");
                             verifyConvergedHttpLoadBalancerForwardingRulePresent(createdHttpLoadBalancer, targetProxy + "-fr", targetProxy + "-fr-description", null, "TCP", "80-80", targetProxy);
 

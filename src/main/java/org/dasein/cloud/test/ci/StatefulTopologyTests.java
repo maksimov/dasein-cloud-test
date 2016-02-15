@@ -24,7 +24,6 @@ import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ci.CIServices;
 import org.dasein.cloud.ci.Topology;
 import org.dasein.cloud.ci.TopologyProvisionOptions;
-import org.dasein.cloud.ci.TopologyProvisionOptions.AccessConfig;
 import org.dasein.cloud.ci.TopologyProvisionOptions.DiskType;
 import org.dasein.cloud.ci.TopologyProvisionOptions.MaintenanceOption;
 import org.dasein.cloud.ci.TopologySupport;
@@ -38,18 +37,15 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import javax.annotation.Nonnull;
-
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Random;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 /**
@@ -60,8 +56,14 @@ import static org.junit.Assume.assumeTrue;
  * @version 2013.07 initial version
  * @since 2013.07
  */
+
 public class StatefulTopologyTests {
     static private DaseinTestManager tm;
+    static private final Random random = new Random();
+    private String testNetworkId;
+    private String testImageId;
+    private String testProductId;
+    static private List<String> testTopologyIds = new ArrayList<String>();
 
     @BeforeClass
     static public void configure() {
@@ -78,15 +80,15 @@ public class StatefulTopologyTests {
     @Rule
     public final TestName name = new TestName();
 
-    private String testTopologyId;
-
     public StatefulTopologyTests() { }
 
     @Before
     public void before() {
         tm.begin(name.getMethodName());
         assumeTrue(!tm.isTestSkipped());
-        testTopologyId = tm.getTestTopologyId(DaseinTestManager.STATELESS, false);
+        testNetworkId = tm.getTestVLANId(DaseinTestManager.STATELESS, false, null);
+        testImageId = tm.getTestImageId(DaseinTestManager.STATELESS, false);
+        testProductId = tm.getTestVMProductId();
     }
 
     @After
@@ -158,7 +160,9 @@ public class StatefulTopologyTests {
             TopologySupport support = services.getTopologySupport();
 
             if( support != null ) {
-                TopologyProvisionOptions withTopologyOptions = TopologyProvisionOptions.getInstance("instance-template-2", "description", "f1-micro", true);
+
+                String name = "dsn-topology"+String.valueOf(random.nextInt(1000));
+                TopologyProvisionOptions withTopologyOptions = TopologyProvisionOptions.getInstance(name, "description", testProductId, true);
 
                 List<String> tags = new ArrayList<String>();
                 tags.add("http-server");
@@ -166,20 +170,26 @@ public class StatefulTopologyTests {
                 tags.add("generic-tag");
 
                 List<String> sshKeys = new ArrayList<String>();
-                sshKeys.add("roger.unwin:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCvM53nrgEnFrMe6V53Th1GRZrPUxmoWSD+OMXlvluaEFn58yQANUqOAZK20inpbiw2xDwwHscR0ijGXPmCl7PC6vUIYuNixzSckpuKAc+Ml2qjodw0FAq4jy0jW/S9Vgu4E+0zoIucLbPhkfT6aoV7Qg1N1801FUh3MU5XHPOP5kVlBhXISondnSGHJccJGHVmr8VeJZPNLBIz4ZUOo4pmg5gX7uzNVFmj8UJ3nP2x+Qfmn7a0C9+aseLIwynVj/oJV1S8BAK/46RUjlfjlsgsCwduaulFjIQRc6dMb7knD4DkCTUwH5KDl+tblm2yjcGr0w6uXiG0qc+kxBi4sRqR roger.unwin@enstratius.com");
+                sshKeys.add("user.name:ssh-rsa BLah2blah34BL44jdshdudiIEJKEBNu4494hfjs9w94jksdn user.name@test.test");
                 withTopologyOptions = withTopologyOptions.withSshKeys(sshKeys.toArray(new String[sshKeys.size()]));
 
                 Map<String, String> metadata = new HashMap<String, String>();
-                metadata.put("roger", "here");
+                metadata.put("key", "value");
                 withTopologyOptions = withTopologyOptions.withMetadata(metadata);
 
                 withTopologyOptions = withTopologyOptions.withAutomaticRestart(false);
                 withTopologyOptions = withTopologyOptions.withMaintenanceOption(MaintenanceOption.TERMINATE_VM_INSTANCE);
 
                 withTopologyOptions = withTopologyOptions.withTags(tags);
-                withTopologyOptions = withTopologyOptions.withNetworkInterface("name", "https://www.googleapis.com/compute/v1/projects/qa-project-2/global/networks/default", true); // ,accessConfigs);
-                withTopologyOptions = withTopologyOptions.withAttachedDisk("instance-template-2", DiskType.STANDARD_PERSISTENT_DISK, "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-7-wheezy-v20150127", true, true);
+                withTopologyOptions = withTopologyOptions.withNetworkInterface(testNetworkId, null, true); // ,accessConfigs);
+                withTopologyOptions = withTopologyOptions.withAttachedDisk("dsn-topology-disk"+String.valueOf(random.nextInt(1000)), DiskType.STANDARD_PERSISTENT_DISK, testImageId, true, true);
                 boolean result = support.createTopology(withTopologyOptions);
+                if (result) {
+                    testTopologyIds.add(name);
+                }
+
+                Topology t = support.getTopology(name);
+                assertTopology(t);
             } else {
                 tm.ok("No topology support in this cloud");
             }
@@ -199,33 +209,25 @@ public class StatefulTopologyTests {
             TopologySupport support = services.getTopologySupport();
 
             if( support != null ) {
+                if (testTopologyIds == null || testTopologyIds.isEmpty()) {
 
-                TopologyProvisionOptions withTopologyOptions = TopologyProvisionOptions.getInstance("instance-template-1", "description", "f1-micro", true);
-                withTopologyOptions = withTopologyOptions.withNetworkInterface("name", "https://www.googleapis.com/compute/v1/projects/qa-project-2/global/networks/default", false);
-                withTopologyOptions = withTopologyOptions.withAttachedDisk("instance-template-2", DiskType.SSD_PERSISTENT_DISK, "https://www.googleapis.com/compute/v1/projects/debian-cloud/global/images/debian-7-wheezy-v20150127", true, true);
+                    TopologyProvisionOptions withTopologyOptions = TopologyProvisionOptions.getInstance("dsn-remove-topology", "description", testProductId, true);
+                    withTopologyOptions = withTopologyOptions.withNetworkInterface(testNetworkId, null, false);
+                    withTopologyOptions = withTopologyOptions.withAttachedDisk("dsn-remove-topology-disk", DiskType.SSD_PERSISTENT_DISK, testImageId, true, true);
 
-                List<String> sshKeys = new ArrayList<String>();
-                sshKeys.add("roger.unwin:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCvM53nrgEnFrMe6V53Th1GRZrPUxmoWSD+OMXlvluaEFn58yQANUqOAZK20inpbiw2xDwwHscR0ijGXPmCl7PC6vUIYuNixzSckpuKAc+Ml2qjodw0FAq4jy0jW/S9Vgu4E+0zoIucLbPhkfT6aoV7Qg1N1801FUh3MU5XHPOP5kVlBhXISondnSGHJccJGHVmr8VeJZPNLBIz4ZUOo4pmg5gX7uzNVFmj8UJ3nP2x+Qfmn7a0C9+aseLIwynVj/oJV1S8BAK/46RUjlfjlsgsCwduaulFjIQRc6dMb7knD4DkCTUwH5KDl+tblm2yjcGr0w6uXiG0qc+kxBi4sRqR roger.unwin@enstratius.com");
-                withTopologyOptions = withTopologyOptions.withSshKeys(sshKeys.toArray(new String[sshKeys.size()]));
+                    withTopologyOptions = withTopologyOptions.withAutomaticRestart(true);
+                    withTopologyOptions = withTopologyOptions.withMaintenanceOption(MaintenanceOption.MIGRATE_VM_INSTANCE);
 
-                Map<String, String> metadata = new HashMap<String, String>();
-                metadata.put("roger", "here");
-                withTopologyOptions = withTopologyOptions.withMetadata(metadata);
-
-                withTopologyOptions = withTopologyOptions.withAutomaticRestart(true);
-                withTopologyOptions = withTopologyOptions.withMaintenanceOption(MaintenanceOption.MIGRATE_VM_INSTANCE);
-
-                List<String> tags = new ArrayList<String>();
-                tags.add("http-server");
-                tags.add("generic-tag");
-                withTopologyOptions = withTopologyOptions.withTags(tags);
-
-                boolean result1 = support.createTopology(withTopologyOptions);
-
-                List<String> topologyIds = new ArrayList<String>();
-                topologyIds.add("instance-template-1");
-                topologyIds.add("instance-template-2");
-                boolean result2 = support.removeTopologies(topologyIds.toArray(new String[topologyIds.size()]));
+                    boolean result = support.createTopology(withTopologyOptions);
+                    if (result) {
+                        testTopologyIds.add("dsn-remove-topology");
+                    }
+                }
+                boolean result2 = support.removeTopologies(testTopologyIds.toArray(new String[testTopologyIds.size()]));
+                for (String id : testTopologyIds) {
+                    Topology t = support.getTopology(id);
+                    assertNull("Topology "+id+" should have been removed", t);
+                }
             } else {
                 tm.ok("No topology support in this cloud");
             }

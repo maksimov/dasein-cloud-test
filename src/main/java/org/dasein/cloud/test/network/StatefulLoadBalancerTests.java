@@ -19,28 +19,22 @@
 
 package org.dasein.cloud.test.network;
 
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.OperationNotSupportedException;
 import org.dasein.cloud.Requirement;
 import org.dasein.cloud.compute.VmState;
 import org.dasein.cloud.dc.DataCenter;
-import org.dasein.cloud.network.*;
+import org.dasein.cloud.network.HealthCheckOptions;
+import org.dasein.cloud.network.LbEndpointType;
+import org.dasein.cloud.network.LbListener;
+import org.dasein.cloud.network.LoadBalancer;
+import org.dasein.cloud.network.LoadBalancerEndpoint;
+import org.dasein.cloud.network.LoadBalancerHealthCheck;
+import org.dasein.cloud.network.LoadBalancerState;
+import org.dasein.cloud.network.LoadBalancerSupport;
+import org.dasein.cloud.network.NetworkServices;
+import org.dasein.cloud.network.SSLCertificate;
 import org.dasein.cloud.test.DaseinTestManager;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -49,6 +43,15 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.Assert.*;
+import static org.junit.Assume.assumeTrue;
 
 /**
  * Implements test cases against stateful load balancer functions.
@@ -317,7 +320,7 @@ public class StatefulLoadBalancerTests {
             return;
         }
 
-        if( !tm.supportsHttps(support) ) {
+        if( withHttpsListener && !tm.supportsHttps(support) ) {
             tm.ok(tm.getProvider().getCloudName() + " does not support SSL in load balancers, skipping test");
             return;
         }
@@ -372,7 +375,7 @@ public class StatefulLoadBalancerTests {
         assertNotNull("The newly created load balancer is null", lb);
 
         List<LbListener> listeners = new ArrayList<LbListener>();
-        LbListener l = LbListener.getInstance(80, 80);
+        LbListener l = LbListener.getInstance(8083, 8083);
         listeners.add(l);
         l = LbListener.getInstance(9090, 9090);
         listeners.add(l);

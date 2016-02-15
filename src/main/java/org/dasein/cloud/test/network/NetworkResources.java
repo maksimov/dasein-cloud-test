@@ -1082,8 +1082,13 @@ public class NetworkResources {
 
     public @Nonnull HealthCheckOptions getTestHttpHealthCheckOptions(@Nonnull LoadBalancerSupport lbs) throws CloudException, InternalException {
         if( testHttpHealthCheckOptions == null ) {
+            String name = null;
+            Requirement nameRequired = lbs.getCapabilities().healthCheckRequiresName();
+            if (nameRequired.equals(Requirement.REQUIRED)) {
+                name = "dsnHealthCheck"+String.valueOf(random.nextInt(10000));
+            }
             testHttpHealthCheckOptions = HealthCheckOptions.getInstance(
-                    null, null, null, "localhost",
+                    name, null, null, "localhost",
                     LoadBalancerHealthCheck.HCProtocol.HTTP, 8080, "/index.htm",
                     lbs.getCapabilities().getMaxHealthCheckInterval(),
                     lbs.getCapabilities().getMaxHealthCheckTimeout(),
@@ -1846,7 +1851,7 @@ public class NetworkResources {
                         }
                         VLAN vlan = vlanSupport.getVlan(vlanId);
                         if( vlan == null ) {
-                            throw new ResourceNotFoundException("No such VLAN: " + vlanId);
+                            throw new ResourceNotFoundException("VLAN", vlanId);
                         }
                         String subnetId = getTestSubnetId(DaseinTestManager.STATEFUL, true, vlanId, vlan.getProviderDataCenterId());
                         try {
@@ -1855,7 +1860,7 @@ public class NetworkResources {
                         }
                         Subnet subnet = services.getVlanSupport().getSubnet(subnetId);
                         if( subnet == null ) {
-                            throw new ResourceNotFoundException("No such Subnet: " + subnetId);
+                            throw new ResourceNotFoundException("Subnet", subnetId);
                         }
                         testSubnetId = subnetId;
                         String productId = c.getTestVMProductId();
@@ -2029,7 +2034,7 @@ public class NetworkResources {
         if( vlanId == null ) {
             vlanId = getTestVLANId(DaseinTestManager.STATEFUL, true, null);
             if( vlanId == null ) {
-                throw new ResourceNotFoundException("No VLAN ID could be found");
+                throw new ResourceNotFoundException("Test VLAN ID", "n/a");
             }
         }
 
@@ -2055,7 +2060,7 @@ public class NetworkResources {
             VLAN vlan = support.getVlan(vlanId);
 
             if( vlan == null ) {
-                throw new ResourceNotFoundException("No such VLAN: " + vlanId);
+                throw new ResourceNotFoundException("VLAN", vlanId);
             }
             preferredDataCenterId = vlan.getProviderDataCenterId();
             if( preferredDataCenterId == null ) {
@@ -2106,7 +2111,7 @@ public class NetworkResources {
         if( support.getCapabilities().isSubnetDataCenterConstrained() ) {
             VLAN vlan = support.getVlan(vlanId);
             if( vlan == null ) {
-                throw new ResourceNotFoundException("No such VLAN: " + vlanId);
+                throw new ResourceNotFoundException("VLAN", vlanId);
             }
         }
         String id = support.createInternetGateway(vlanId);

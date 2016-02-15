@@ -19,9 +19,6 @@
 
 package org.dasein.cloud.test.ci;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeTrue;
-
 import org.dasein.cloud.CloudException;
 import org.dasein.cloud.InternalException;
 import org.dasein.cloud.ResourceStatus;
@@ -38,10 +35,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
+
 /**
  * Tests support for Dasein Cloud CIs which represent complex, multi-resource groups.
  */
-// TODO(roger): please remove hardcoded zone ids
 public class StatefulCITests {
     static private DaseinTestManager tm;
 
@@ -61,6 +60,8 @@ public class StatefulCITests {
     public final TestName name = new TestName();
 
     private String testTopologyId;
+    private String testCIId;
+    private String testDataCenterId;
 
     public StatefulCITests() { }
 
@@ -68,19 +69,19 @@ public class StatefulCITests {
     public void before() {
         tm.begin(name.getMethodName());
         assumeTrue(!tm.isTestSkipped());
-        //testTopologyId = tm.getTestTopologyId(DaseinTestManager.STATELESS, false);
+        testTopologyId = tm.getTestTopologyId(DaseinTestManager.STATELESS, true);
+        testDataCenterId = tm.getTestDataCenterId(true);
 
         if (name.getMethodName().startsWith("listConvergedInfrastructures") ||
             name.getMethodName().startsWith("listVLANs") ||
             name.getMethodName().startsWith("listVirtualMachines") ||
             name.getMethodName().startsWith("listConvergedInfrastructureStatus") ||
-            name.getMethodName().startsWith("deleteCITopology")) {
-            //tm.getProvider().getComputeServices().getVirtualMachineSupport().getVirtualMachine()
+            name.getMethodName().startsWith("deleteCIFromTopology")) {
             try {
-                CIProvisionOptions options = CIProvisionOptions.getInstance(name.getMethodName().toLowerCase(), "test-description", "us-central1-f", 1, "instance-template-2");
+                CIProvisionOptions options = CIProvisionOptions.getInstance(name.getMethodName().toLowerCase(), "test-description", testDataCenterId, 1, testTopologyId);
                 if( tm.getProvider().getCIServices() != null && tm.getProvider().getCIServices().getConvergedInfrastructureSupport() != null ) {
                     ConvergedInfrastructure ci = tm.getProvider().getCIServices().getConvergedInfrastructureSupport().provision(options);
-                    testTopologyId = ci.getName();
+                    testCIId = ci.getName();
                 }
             } catch ( Exception e ) {
             }
@@ -99,7 +100,7 @@ public class StatefulCITests {
                     tm.getProvider().getCIServices().getConvergedInfrastructureSupport().terminate(name.getMethodName().toLowerCase(), "test over");
                 }
             }
-            if (name.getMethodName().startsWith("createCIFromTopolology")) {
+            if (name.getMethodName().startsWith("createCIFromTopology")) {
                 if( tm.getProvider().getCIServices() != null && tm.getProvider().getCIServices().getConvergedInfrastructureSupport() != null ) {
                     tm.getProvider().getCIServices().getConvergedInfrastructureSupport().terminate(name.getMethodName().toLowerCase(), "test over");
                 }
@@ -125,8 +126,8 @@ public class StatefulCITests {
             return;
         }
         String description = "create-test";
-        String zone = "us-central1-f";
-        CIProvisionOptions options = CIProvisionOptions.getInstance(name.getMethodName().toLowerCase(), description , zone , 2, "instance-template-2" );  // is testTopologyId the url?
+        String zone = testDataCenterId;
+        CIProvisionOptions options = CIProvisionOptions.getInstance(name.getMethodName().toLowerCase(), description , zone , 2, testTopologyId );  // is testTopologyId the url?
         ConvergedInfrastructure result = support.provision(options);
     }
 
@@ -147,7 +148,7 @@ public class StatefulCITests {
             return;
         }
 
-        support.terminate(testTopologyId, "die");
+        support.terminate(testCIId, "die");
     }
 
     @Test
@@ -187,7 +188,7 @@ public class StatefulCITests {
         }
 
         int count = 0;
-        Iterable<String> virtualMachines = support.listVirtualMachines(testTopologyId);
+        Iterable<String> virtualMachines = support.listVirtualMachines(testCIId);
         for (String vm : virtualMachines) {
             count++;
         }
@@ -209,7 +210,7 @@ public class StatefulCITests {
         }
 
         int count = 0;
-        Iterable<String> virtualMachines = support.listVLANs(testTopologyId);
+        Iterable<String> virtualMachines = support.listVLANs(testCIId);
         for (String vlan : virtualMachines) {
             count++;
         }
