@@ -319,7 +319,6 @@ public class StatefulVMTests {
         if( networkResources == null ) {
             fail("Test network resources aren't initialised. Panic!");
         }
-
         String imageId = tm.getTestImageId(DaseinTestManager.STATELESS, false);
 
         assertNotNull("Unable to identify a test image for test launch", imageId);

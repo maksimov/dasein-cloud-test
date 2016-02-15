@@ -67,7 +67,7 @@ public class DaseinTestManager {
     static public final String STATELESS = "stateless";
     static public final String REMOVED   = "removed";
 
-    static private Map<String,Integer> apiAudit = new HashMap<String, Integer>();
+    static private Map<String,Integer> apiAudit = new HashMap<>();
 
     static private CIResources       ciResources;
     static private ComputeResources  computeResources;
@@ -76,7 +76,7 @@ public class DaseinTestManager {
     static private PlatformResources platformResources;
     static private StorageResources  storageResources;
 
-    static private Set<String> exclusions;
+    static private Set<String>   exclusions;
     static private Set<String>   inclusions;
 
     static private int  skipCount;
