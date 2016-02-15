@@ -308,7 +308,6 @@ public class StatelessIAMTests {
             }
         }
     }
-
     @Test
     public void listPolicies() throws CloudException, InternalException {
         assumeNotNull(identityServices);
