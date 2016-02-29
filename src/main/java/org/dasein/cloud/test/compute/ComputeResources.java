@@ -528,7 +528,7 @@ public class ComputeResources {
                     if( (vm == null || VmState.TERMINATED.equals(vm.getCurrentState()) || vm.getProviderVlanId() == null || !vm.getProviderVlanId().equalsIgnoreCase(vlanId)) && provisionIfNull ) {
                         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
                         if( testImageId == null ) {
-                            throw new ResourceNotFoundException("Test image for provisioning a virtual machine", "n/a");
+                            throw new InternalException("Test image id is not found but is required");
                         }
                         long now = System.currentTimeMillis();
                         String name = "dasein-test-" + label + " " + now;
@@ -918,13 +918,13 @@ public class ComputeResources {
         if( vmId == null ) {
             vmId = getTestVmId(DaseinTestManager.STATEFUL, VmState.RUNNING, true, null);
             if( vmId == null ) {
-                throw new ResourceNotFoundException("Test Virtual Machine", "n/a");
+                throw new InternalException("Test vm id is not found but is required");
             }
         }
         VirtualMachine vm = vmSupport.getVirtualMachine(vmId);
 
         if( vm == null ) {
-            throw new ResourceNotFoundException("Test Virtual Machine", "n/a");
+            throw new ResourceNotFoundException("vm", vmId);
         }
         String imageId = vm.getProviderMachineImageId();
         MachineImage image = support.getImage(imageId);
@@ -967,7 +967,7 @@ public class ComputeResources {
         if( volumeId == null ) {
             volumeId = getTestVolumeId(DaseinTestManager.STATEFUL + ( System.currentTimeMillis() % 1000 ), true, null, null);
             if( volumeId == null ) {
-                throw new ResourceNotFoundException("Test Volume", "n/a");
+                throw new InternalException("Test volume id is not found but is required");
             }
         }
         @SuppressWarnings("ConstantConditions") VolumeSupport vs = provider.getComputeServices().getVolumeSupport();
@@ -1165,7 +1165,7 @@ public class ComputeResources {
     public @Nonnull String provisionVM( @Nonnull VirtualMachineSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nonnull String hostPrefix, @Nullable String preferredDataCenter ) throws CloudException, InternalException {
         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
         if( testImageId == null ) {
-            throw new ResourceNotFoundException("Test image", "n/a");
+            throw new InternalException("Test image id is not found but is required");
         }
         long now = System.currentTimeMillis();
         String name = namePrefix + "-" + now;
@@ -1180,7 +1180,7 @@ public class ComputeResources {
     public @Nonnull Iterable<String> provisionManyVMs( @Nonnull VirtualMachineSupport support, @Nonnull String label, @Nonnull String namePrefix, @Nonnull String hostPrefix, @Nullable String preferredDataCenter, int count ) throws CloudException, InternalException {
         String testImageId = getTestImageId(DaseinTestManager.STATELESS, false);
         if( testImageId == null ) {
-            throw new ResourceNotFoundException("Test image", "n/a");
+            throw new InternalException("Test image id is not found but is required");
         }
         long now = System.currentTimeMillis();
         String name = namePrefix + "-" + now;

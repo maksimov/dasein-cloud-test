@@ -2071,7 +2071,7 @@ public class NetworkResources {
         if( vlanId == null ) {
             vlanId = getTestVLANId(DaseinTestManager.STATEFUL, true, null);
             if( vlanId == null ) {
-                throw new ResourceNotFoundException("Test VLAN ID", "n/a");
+                throw new InternalException("Test vlan id is not found but is required");
             }
         }
 

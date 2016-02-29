@@ -571,7 +571,7 @@ public class PlatformResources {
         DatabaseProduct product = getNextCheapestProduct(support.listDatabaseProducts(engine), afterThis );
 
         if( product == null ) {
-            throw new ResourceNotFoundException("Test Database product", "n/a");
+            throw new InternalException("Test database product is not found but is required");
         }
 
         return product;
